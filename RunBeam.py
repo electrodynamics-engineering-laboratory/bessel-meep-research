@@ -4,11 +4,11 @@
 import meep as mp
 import math
 import cmath
+from scipy.special import jv
 
 from datetime import datetime
 from typing import Iterable
 
-from scipy.special import jv
 from beams import Beam3D, CS1Bessel, CS2Bessel, LEBessel, LMBessel, TEBessel, TMBessel
 
 
