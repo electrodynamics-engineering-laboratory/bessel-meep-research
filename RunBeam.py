@@ -6,11 +6,11 @@ import math
 import cmath
 
 from datetime import datetime
+from typing import Iterable
 
 from scipy.special import jv
 from beams import Beam3D, CS1Bessel, CS2Bessel, LEBessel, LMBessel, TEBessel, TMBessel
 
-from typing import Iterable
 
 print("Meep version:", mp.__version__)
 print("\nStart time:", datetime.now())
@@ -185,13 +185,13 @@ def output_efield_imag_squared(sim):
     return sim.output_field_function(name, cs, func, real_only=True)
 
 run_args = [#mp.at_beginning(mp.output_epsilon),    # output of dielectric function
-            #mp.at_end(mp.output_efield_x),         # output of E_x component
+            mp.at_end(mp.output_efield_x),         # output of E_x component
             mp.at_end(mp.output_efield_y),         # output of E_y component
-            #mp.at_end(mp.output_efield_z),         # output of E_z component
+            mp.at_end(mp.output_efield_z),         # output of E_z component
             mp.at_end(output_efield_real_squared),  # output of electric field intensity (real)
             mp.at_end(output_efield_imag_squared),   # output of electric field intensity (imag)
-            mp.at_every(0.2, mp.in_volume(mp.Volume(size=mp.Vector3(sx, sy, 0), center=mp.Vector3(0, 0, 2)),
-                                          mp.output_png(mp.Ex, "-Zc dkbluered"))),
+            # mp.at_every(0.2, mp.in_volume(mp.Volume(size=mp.Vector3(sx, sy, 0), center=mp.Vector3(0, 0, 2)),
+            #                               mp.output_png(mp.Ex, "-Zc dkbluered"))),
             ]
 
 sim.run(*run_args, until=runtime)
