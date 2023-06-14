@@ -41,7 +41,7 @@ class BesselBeam3D(Beam3D):
     n1: float
     k_vac: float
     zeta_rad: float
-    m_charge: float
+    m_charge: int
 
     # Computed fields
     k: float = field(init=False)
