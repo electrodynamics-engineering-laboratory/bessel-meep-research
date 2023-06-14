@@ -24,7 +24,6 @@ chi_deg = 15.0
 # Beam parameters
 m_charge = 2        # topological charge
 zeta_deg = 70       # axicon angle (deg)
-w_0 = 2.0           # beam width (um)
 r_w = 3             # distance to interface (wavelengths)
 
 """Define beams and amplitudes
@@ -32,34 +31,28 @@ First item in each tuple is a Beam3D class. An instance will be constructed with
 Second is amplitude of beam
 """
 beams_and_amps: Iterable[tuple[Type[Beam3D], complex]] = [
-    (TEBessel, 1),
-    (TMBessel, 1),
-    (LEBessel, 1),
-    (LMBessel, 1),
-    (CS1Bessel, 1),
-    (CS2Bessel, 1),
+    (TEBessel,  0.5),
+    (TMBessel,  0.5*1j),
+    (LEBessel,  0),
+    (LMBessel,  0),
+    (CS1Bessel, 0),
+    (CS2Bessel, 0),
 ]
 
-# Field components (also complex amplitudes)
-e_x = 0
-e_y = 1
-e_z = 0
-
 # MEEP parameters
-sx = 20  # size of cell including PML in x-direction (um)
-sy = 20  # size of cell including PML in y-direction (um)
+sx = 24  # size of cell including PML in x-direction (um)
+sy = 24  # size of cell including PML in y-direction (um)
 sz = 15   # size of cell including PML in z-direction (um)
 pml_thickness = 1.0   # thickness of PML layer (um)
 
 lam = 1.55      # vacuum wavelength of source (um)
 
-runtime = 10    # run time (in source periods)
+runtime = 20    # run time (in source periods)
 pixels = 15     # pixels/um
 
 
 freq = 1/lam    # vacuum frequency of source
 k_vac = 2 * math.pi * freq  # vacuum wavenumber (um^-1)
-r_wn = r_w * freq * n1
 
 resolution = math.ceil(pixels * (n1 if n1 > n2 else n2) * freq)
 Courant = (n1 if n1 < n2 else n2) / 3
@@ -122,31 +115,6 @@ for beam_type, amplitude in beams_and_amps:
     if amplitude == 0:
         continue
     sources.extend(make_beam_sources(beam_type(**all_beam_args), amplitude))
-
-if e_x != 0:
-    source_Ex = mp.GaussianBeam3DSource(src=mp.ContinuousSource(frequency=freq, width=0.5),
-                        beam_w0 = w_0,
-                        beam_kdir=mp.Vector3(0, 0, 1),
-                        beam_E0=mp.Vector3(1, 0, 0),
-                        amplitude=e_x,
-                        size=mp.Vector3(sx, sy, 0),
-                        center=mp.Vector3(0, 0, -r_wn)
-                        )
-    sources.append(source_Ex)
-
-
-def BGProfile(r):
-    return math.exp(-((r.x**2 + r.y**2) / w_0**2)) * jv(m_charge, kt * math.sqrt(r.x**2 + r.y**2)) * cmath.exp(1j * m_charge * math.atan2(r.y, r.x))
-
-if e_y != 0:
-    source_Ey = mp.Source(src=mp.ContinuousSource(frequency=freq, width=0.5),
-                          component=mp.Ey,
-                          amplitude=e_y,
-                          size=mp.Vector3(sx, sy, 0),
-                          center=mp.Vector3(0, 0, -r_w),
-                          amp_func=BGProfile
-                          )
-    sources.append(source_Ey)
 
 sim = mp.Simulation(cell_size=cell,
                     boundary_layers=pml_layers,
