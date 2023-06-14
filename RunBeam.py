@@ -7,14 +7,12 @@ import cmath
 from scipy.special import jv
 
 from datetime import datetime
-from typing import Iterable
+from typing import Iterable, Type
 
 from beams import Beam3D, CS1Bessel, CS2Bessel, LEBessel, LMBessel, TEBessel, TMBessel
 
-
 print("Meep version:", mp.__version__)
 print("\nStart time:", datetime.now())
-
 
 # Media parameters
 n1 = 1.0
@@ -28,6 +26,19 @@ m_charge = 2        # topological charge
 zeta_deg = 70       # axicon angle (deg)
 w_0 = 2.0           # beam width (um)
 r_w = 3             # distance to interface (wavelengths)
+
+"""Define beams and amplitudes
+First item in each tuple is a Beam3D class. An instance will be constructed with the args from all_beam_args
+Second is amplitude of beam
+"""
+beams_and_amps: Iterable[tuple[Type[Beam3D], complex]] = [
+    (TEBessel, 1),
+    (TMBessel, 1),
+    (LEBessel, 1),
+    (LMBessel, 1),
+    (CS1Bessel, 1),
+    (CS2Bessel, 1),
+]
 
 # Field components (also complex amplitudes)
 e_x = 0
@@ -107,21 +118,10 @@ all_beam_args = {
     "m_charge": m_charge,
 }
 
-# Define beams and amplitudes
-# First item in each tuple is beam, second is amplitude of beam
-beams_and_amps: Iterable[tuple[Beam3D, float]] = [
-    (TEBessel(**all_beam_args), 1),
-    (TMBessel(**all_beam_args), 1),
-    (LEBessel(**all_beam_args), 1),
-    (LMBessel(**all_beam_args), 1),
-    (CS1Bessel(**all_beam_args), 1),
-    (CS2Bessel(**all_beam_args), 1),
-]
-
-for beam, amplitude in beams_and_amps:
+for beam_type, amplitude in beams_and_amps:
     if amplitude == 0:
         continue
-    sources.extend(make_beam_sources(beam, amplitude))
+    sources.extend(make_beam_sources(beam_type(**all_beam_args), amplitude))
 
 if e_x != 0:
     source_Ex = mp.GaussianBeam3DSource(src=mp.ContinuousSource(frequency=freq, width=0.5),
