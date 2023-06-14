@@ -67,7 +67,6 @@ class BesselBeam3D(Beam3D):
         rho = math.sqrt(r.x**2 + r.y**2)
         return jv(n, self.kt * rho) * cmath.exp(1j * n * phi) * cmath.exp(1j * self.kl * r.z)
     
-@dataclass
 class TEBessel(BesselBeam3D):
     def x(self, r):
         return -0.5 * (self.kt/self.k) * (super().f(self.m_charge-1,r) + super().f(self.m_charge+1,r))
@@ -78,7 +77,6 @@ class TEBessel(BesselBeam3D):
     def z(self, r):
         return 0
 
-@dataclass
 class TMBessel(BesselBeam3D):
     def x(self, r):
         return 1j * 0.5 * (self.kt*self.kl/self.k**2) * (super().f(self.m_charge-1,r) - super().f(self.m_charge+1,r))
@@ -89,7 +87,6 @@ class TMBessel(BesselBeam3D):
     def z(self, r):
         return (self.kt/self.k)**2 * super().f(self.m_charge,r)
 
-@dataclass
 class LEBessel(BesselBeam3D):
     def x(self, r):
         return (self.kl/self.k) * super().f(self.m_charge,r)
@@ -100,7 +97,6 @@ class LEBessel(BesselBeam3D):
     def z(self, r):
         return 0.5 * 1j * (self.kt/self.k) * (super().f(self.m_charge-1,r) - super().f(self.m_charge+1,r))
     
-@dataclass
 class LMBessel(BesselBeam3D):
     def x(self, r):
         return 0.25 * 1j * (self.kt**2 / self.k**2) * (super().f(self.m_charge-2,r) - super().f(self.m_charge+2,r))
@@ -111,7 +107,6 @@ class LMBessel(BesselBeam3D):
     def z(self, r):
         return -0.5 * self.kt * (self.kl/self.k**2) * (super().f(self.m_charge-1,r)+super().f(self.m_charge+1,r))
 
-@dataclass
 class CS1Bessel(BesselBeam3D):
     """CS1 Bessel Beam
     """
@@ -124,7 +119,6 @@ class CS1Bessel(BesselBeam3D):
     def z(self, r):
         return 0.25 * 1j * (self.kl + self.k) * (self.kt/self.k**2) * (super().f(self.m_charge-1,r) - super().f(self.m_charge+1,r))
     
-@dataclass
 class CS2Bessel(BesselBeam3D):
     def x(self, r):
         return (0.25/self.k**2) * ((self.k-self.kl)**2 * super().f(self.m_charge,r) + 0.5*self.kt**2 * (super().f(self.m_charge-2,r) + super().f(self.m_charge+2,r)))
