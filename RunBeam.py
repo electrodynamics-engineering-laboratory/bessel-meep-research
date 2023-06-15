@@ -9,7 +9,7 @@ from scipy.special import jv
 from datetime import datetime
 from typing import Iterable, Type
 
-from beams import Beam3D, CS1Bessel, CS2Bessel, LEBessel, LMBessel, TEBessel, TMBessel
+from beams import Beam3D, CS1Bessel, CS2Bessel, LEBessel, LMBessel, TEBessel, TMBessel, ZRotatedBeam
 
 print("Meep version:", mp.__version__)
 print("\nStart time:", datetime.now())
@@ -29,14 +29,15 @@ r_w = 3             # distance to interface (wavelengths)
 """Define beams and amplitudes
 First item in each tuple is a Beam3D class. An instance will be constructed with the args from all_beam_args
 Second is amplitude of beam
+Third is rotation of beam in radians
 """
-beams_and_amps: Iterable[tuple[Type[Beam3D], complex]] = [
-    (TEBessel,  0.5),
-    (TMBessel,  0.5*1j),
-    (LEBessel,  0),
-    (LMBessel,  0),
-    (CS1Bessel, 0),
-    (CS2Bessel, 0),
+beams_and_params: Iterable[tuple[Type[Beam3D], complex, float]] = [
+    (TEBessel,  0.5, 0),
+    (TMBessel,  0.5*1j, math.radians(15)),
+    (LEBessel,  0, 0),
+    (LMBessel,  0, 0),
+    (CS1Bessel, 0, 0),
+    (CS2Bessel, 0, 0),
 ]
 
 # MEEP parameters
@@ -111,10 +112,11 @@ all_beam_args = {
     "m_charge": m_charge,
 }
 
-for beam_type, amplitude in beams_and_amps:
+for beam_type, amplitude, phi in beams_and_params:
     if amplitude == 0:
         continue
-    sources.extend(make_beam_sources(beam_type(**all_beam_args), amplitude))
+    sources.extend(make_beam_sources(ZRotatedBeam(beam_type(**all_beam_args), phi),
+                                     amplitude))
 
 sim = mp.Simulation(cell_size=cell,
                     boundary_layers=pml_layers,

@@ -38,6 +38,7 @@ img = ax.imshow(
     )
 fig.colorbar(img)
 
+# Make room for slider left of plot
 fig.subplots_adjust(left=0.25)
 ax_y = fig.add_axes([0.1, 0.25, 0.0225, 0.63])
 y_slider = Slider(

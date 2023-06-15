@@ -128,3 +128,21 @@ class CS2Bessel(BesselBeam3D):
 
     def z(self, r):
         return 0.25 * 1j * (self.kl + self.k) * (self.kt/self.k**2) * (super().f(self.m_charge-1,r) - super().f(self.m_charge+1,r))
+    
+@dataclass
+class ZRotatedBeam(Beam3D):
+    """Rotates underlying beam about z-axis"""
+
+    # Underlying beam to rotate
+    beam: Beam3D
+    # Angle of beam in radians
+    phi: float
+    
+    def x(self, r):
+        return self.beam.x(r) * math.cos(self.phi) + self.beam.y(r) * math.sin(self.phi)
+    
+    def y(self, r):
+        return self.beam.x(r) * -math.sin(self.phi) + self.beam.y(r) * math.cos(self.phi)
+    
+    def z(self, r):
+        return self.beam.z(r)
