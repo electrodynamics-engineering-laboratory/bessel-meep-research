@@ -16,25 +16,25 @@ print("\nStart time:", datetime.now())
 
 # Media parameters
 n1 = 1.0
-n2 = 1.54
+n2 = 1.1
 
 # angle of incidence (with respect to -z)
-chi_deg = 15.0
+chi_deg = 25.0
 
 # Beam parameters
 m_charge = 2        # topological charge
-zeta_deg = 70       # axicon angle (deg)
-r_w = 3             # distance to interface (wavelengths)
+zeta_deg = 20       # axicon angle (deg)
+r_w = 7             # distance to interface (wavelengths)
 
 """Define beams and amplitudes
 First item in each tuple is a Beam3D class. An instance will be constructed with the args from all_beam_args
 Second is amplitude of beam
-Third is rotation of beam in radians
+Third is rotation of beam in degrees
 """
 beams_and_params: Iterable[tuple[Type[Beam3D], complex, float]] = [
-    (TEBessel,  0.5, 0),
-    (TMBessel,  0.5*1j, math.radians(15)),
-    (LEBessel,  0, 0),
+    (TEBessel,  0, 0),
+    (TMBessel,  0, 0),
+    (LEBessel,  1, 90),
     (LMBessel,  0, 0),
     (CS1Bessel, 0, 0),
     (CS2Bessel, 0, 0),
@@ -115,7 +115,7 @@ all_beam_args = {
 for beam_type, amplitude, phi in beams_and_params:
     if amplitude == 0:
         continue
-    sources.extend(make_beam_sources(ZRotatedBeam(beam_type(**all_beam_args), phi),
+    sources.extend(make_beam_sources(ZRotatedBeam(beam_type(**all_beam_args), math.radians(phi)),
                                      amplitude))
 
 sim = mp.Simulation(cell_size=cell,
@@ -158,8 +158,8 @@ run_args = [#mp.at_beginning(mp.output_epsilon),    # output of dielectric funct
             mp.at_end(mp.output_efield_x),         # output of E_x component
             mp.at_end(mp.output_efield_y),         # output of E_y component
             mp.at_end(mp.output_efield_z),         # output of E_z component
-            mp.at_end(output_efield_real_squared),  # output of electric field intensity (real)
-            mp.at_end(output_efield_imag_squared),   # output of electric field intensity (imag)
+            # mp.at_end(output_efield_real_squared),  # output of electric field intensity (real)
+            # mp.at_end(output_efield_imag_squared),   # output of electric field intensity (imag)
             # mp.at_every(0.2, mp.in_volume(mp.Volume(size=mp.Vector3(sx, sy, 0), center=mp.Vector3(0, 0, 2)),
             #                               mp.output_png(mp.Ex, "-Zc dkbluered"))),
             ]
@@ -167,4 +167,3 @@ run_args = [#mp.at_beginning(mp.output_epsilon),    # output of dielectric funct
 sim.run(*run_args, until=runtime)
 
 print("\nend time:", datetime.now())
-
