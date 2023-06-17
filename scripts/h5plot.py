@@ -1,18 +1,22 @@
+import os
+
+import numpy as np
+from numpy.typing import ArrayLike
 import matplotlib.pyplot as plt
 import h5py
-import numpy as np
 
-def plot_slice(arr: np.ndarray, axes: plt.Axes) -> plt.Axes:
-    """Plot data, with x in first dimension and y in second dimension"""
+def plot_image(arr: ArrayLike, axes: plt.Axes) -> plt.Axes:
+    """Plot image onto given axes, with x in first dimension and y in second dimension"""
     axes.imshow(arr.T, origin="lower")
     return axes
 
-def plot_save_all_y_slices(data):
+def plot_and_save_all_y_slices(data: ArrayLike, output_dir: str = "plot-out"):
+    os.mkdir(output_dir)
     fig, ax = plt.subplots(1, 1)
     # Make the y axis the first axis
     for i, y_slice in enumerate(np.moveaxis(data, 1, 0)):
-        plot_slice(y_slice, ax)
-        fig.savefig(f"plot-out/out{i}.png")
+        plot_image(y_slice, ax)
+        fig.savefig(f"{output_dir}{i}.png")
         ax.clear()
 
 def calc_intensity_squared(x, y, z):
@@ -32,13 +36,14 @@ def dataset_take(dataset: h5py.Dataset, indices, axis=0):
     slicing = (slice(None),) * axis + indices + (slice(None),)
     return dataset[slicing]
 
-def plot_intensity_yslices(ex: h5py.Dataset, ey: h5py.Dataset, ez: h5py.Dataset):
+def plot_intensity_yslices(ex: h5py.Dataset, ey: h5py.Dataset, ez: h5py.Dataset, output_dir: str = "plot-out"):
+    os.mkdir(output_dir)
     fig, ax = plt.subplots(1, 1)
     # Second dimension is y_index. Assume all datasets have same dimensions
     for y_index in range(ex.shape[1]):
         intensities = calc_intensity_squared(ex[:, y_index, :], ey[:, y_index, :], ez[:, y_index, :])
-        plot_slice(intensities, ax)
-        fig.savefig(f"plot-out/out{y_index}.png")
+        plot_image(intensities, ax)
+        fig.savefig(f"{output_dir}/out{y_index}.png")
         ax.clear()
 
 ex_file = h5py.File("run_beam-out/run_beam-ex-000020.00.h5", "r")
@@ -53,4 +58,5 @@ ez_file = h5py.File("run_beam-out/run_beam-ez-000020.00.h5", "r")
 ez_r = ez_file["ez.r"]
 ez_i = ez_file["ez.i"]
 
-plot_intensity_yslices(ex_r, ey_r, ez_r)
+plot_intensity_yslices(ex_r, ey_r, ez_r, "plot-real-out")
+plot_intensity_yslices(ex_i, ey_i, ez_i, "plot-imag-out")
