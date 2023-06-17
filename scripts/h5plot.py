@@ -1,64 +1,56 @@
-import argparse
-
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
 import h5py
+import numpy as np
 
-parser = argparse.ArgumentParser(
-    prog="h5plot",
-    description="""plot y (2nd) slice of 3d h5 files.
-    Colormap and normalization is set from initial slice of data and doesn't update when using the GUI slider
-    """
-)
+def plot_slice(arr: np.ndarray, axes: plt.Axes) -> plt.Axes:
+    """Plot data, with x in first dimension and y in second dimension"""
+    axes.imshow(arr.T, origin="lower")
+    return axes
 
-parser.add_argument("filename")
-parser.add_argument("dataset_name")
-parser.add_argument("yslice", type=int, help="y index in dataset of slice to plot")
-parser.add_argument("-m", "--cmap", dest="cmap", default="viridis")
+def plot_save_all_y_slices(data):
+    fig, ax = plt.subplots(1, 1)
+    # Make the y axis the first axis
+    for i, y_slice in enumerate(np.moveaxis(data, 1, 0)):
+        plot_slice(y_slice, ax)
+        fig.savefig(f"plot-out/out{i}.png")
+        ax.clear()
 
-args = parser.parse_args()
+def calc_intensity_squared(x, y, z):
+    return x * x + y * y + z * z
 
-f = h5py.File(args.filename, "r")
+def dataset_take(dataset: h5py.Dataset, indices, axis=0):
+    """Like numpy.take() but for h5py datasets.
+    
+    Useful so that the entire dataset doesn't have to be loaded into memory as a numpy array to do slicing"""
+    if isinstance(indices, int):
+        # Turn number to tuple with that number
+        indices = (indices,)
+    else:
+        indices = tuple(indices)
 
-dataset = f[args.dataset_name]
-y_slice = dataset[:, args.yslice, :]
+    # see https://stackoverflow.com/questions/11249446/python-extracting-one-slice-of-a-multidimensional-array-given-the-dimension-ind
+    slicing = (slice(None),) * axis + indices + (slice(None),)
+    return dataset[slicing]
 
-fig, ax = plt.subplots()
+def plot_intensity_yslices(ex: h5py.Dataset, ey: h5py.Dataset, ez: h5py.Dataset):
+    fig, ax = plt.subplots(1, 1)
+    # Second dimension is y_index. Assume all datasets have same dimensions
+    for y_index in range(ex.shape[1]):
+        intensities = calc_intensity_squared(ex[:, y_index, :], ey[:, y_index, :], ez[:, y_index, :])
+        plot_slice(intensities, ax)
+        fig.savefig(f"plot-out/out{y_index}.png")
+        ax.clear()
 
-ax.set_title(args.dataset_name)
-ax.set_xlabel("x (dataset index)")
-ax.set_ylabel("z (dataset index)")
+ex_file = h5py.File("run_beam-out/run_beam-ex-000020.00.h5", "r")
+ex_r = ex_file["ex.r"]
+ex_i = ex_file["ex.i"]
 
-img = ax.imshow(
-    # Since imshow expects row column order, transpose so that x is actually columns and z is rows
-    y_slice.T,
-    cmap=args.cmap,
-    origin="lower",
-    interpolation="none",
-    )
-fig.colorbar(img)
+ey_file = h5py.File("run_beam-out/run_beam-ey-000020.00.h5", "r")
+ey_r = ey_file["ey.r"]
+ey_i = ey_file["ey.i"]
 
-# Make room for slider left of plot
-fig.subplots_adjust(left=0.25)
-ax_y = fig.add_axes([0.1, 0.25, 0.0225, 0.63])
-y_slider = Slider(
-    ax=ax_y,
-    label="y coordinate",
-    valmin=0,
-    valmax=dataset.shape[1] - 1,
-    valstep=1,
-    valinit=args.yslice,
-    closedmax=True,
-    orientation="vertical"
-)
+ez_file = h5py.File("run_beam-out/run_beam-ez-000020.00.h5", "r")
+ez_r = ez_file["ez.r"]
+ez_i = ez_file["ez.i"]
 
-def update(y: float):
-    y_slice = dataset[:, round(y), :]
-    # Set data does not update the normalization
-    img.set_data(y_slice.T)
-    # fig.colorbar(img)
-    fig.canvas.draw_idle()
-
-y_slider.on_changed(update)
-
-plt.show()
+plot_intensity_yslices(ex_r, ey_r, ez_r)
