@@ -4,7 +4,6 @@
 import meep as mp
 import math
 import cmath
-from scipy.special import jv
 
 from datetime import datetime
 from typing import Iterable, Type
@@ -26,7 +25,7 @@ m_charge = 2        # topological charge
 zeta_deg = 20       # axicon angle (deg)
 r_w = 7             # distance to interface (wavelengths)
 
-"""Define beams and amplitudes
+"""Define beams, amplitude, and rotation
 First item in each tuple is a Beam3D class. An instance will be constructed with the args from all_beam_args
 Second is amplitude of beam
 Third is rotation of beam in degrees
@@ -47,13 +46,22 @@ sz = 15   # size of cell including PML in z-direction (um)
 pml_thickness = 1.0   # thickness of PML layer (um)
 
 lam = 1.55      # vacuum wavelength of source (um)
+freq = 1/lam    # vacuum frequency of source
+k_vac = 2 * math.pi * freq  # vacuum wavenumber (um^-1)
+
+# Minimum frequency to find for flux regions
+flux_freq_min = freq / 2
+# Maximum frequency to find for flux regions
+flux_freq_max = 4 * freq
+# Number of frequencies to find for flux regions
+flux_num_freqs = 400
+
+# Size of flux region plane
+flux_region_size_x = sx / 2
+flux_region_size_y = sy / 2
 
 runtime = 20    # run time (in source periods)
 pixels = 15     # pixels/um
-
-
-freq = 1/lam    # vacuum frequency of source
-k_vac = 2 * math.pi * freq  # vacuum wavenumber (um^-1)
 
 resolution = math.ceil(pixels * (n1 if n1 > n2 else n2) * freq)
 Courant = (n1 if n1 < n2 else n2) / 3
@@ -130,6 +138,28 @@ sim = mp.Simulation(cell_size=cell,
                     eps_averaging=eps_averaging
                     )
 
+# By default, flux region direction is in positive coordinate direction
+# So these are in positive z direction
+before_interface_flux = sim.add_flux(
+    1/2 * (flux_freq_min + flux_freq_max),
+    flux_freq_max - flux_freq_min,
+    flux_num_freqs,
+    mp.FluxRegion(
+        center=mp.Vector3(z=-r_w/2),
+        size=mp.Vector3(flux_region_size_x, flux_region_size_y)
+    )
+)
+
+after_interface_flux = sim.add_flux(
+    1/2 * (flux_freq_min + flux_freq_max),
+    flux_freq_max - flux_freq_min,
+    flux_num_freqs,
+    mp.FluxRegion(
+        center=mp.Vector3(z=sz/(2 * math.cos(chi_rad))),
+        size=mp.Vector3(flux_region_size_x, flux_region_size_y)
+    )
+)
+
 sim.use_output_directory()   # put output files in a separate folder
 
 def efield_real_squared(r, ex, ey, ez):
@@ -167,3 +197,7 @@ run_args = [#mp.at_beginning(mp.output_epsilon),    # output of dielectric funct
 sim.run(*run_args, until=runtime)
 
 print("\nend time:", datetime.now())
+
+sim.display_fluxes(before_interface_flux, after_interface_flux)
+sim.save_flux("before-interface", before_interface_flux)
+sim.save_flux("after-interface", before_interface_flux)
